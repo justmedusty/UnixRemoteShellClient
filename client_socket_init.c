@@ -2,6 +2,8 @@
 // Created by dustyn on 4/17/24.
 //
 
+#include <unistd.h>
+#include <string.h>
 #include "client_socket_init.h"
 
 /*
@@ -11,8 +13,8 @@
 int get_socket(char addr[],char port[]){
     struct addrinfo hints,*results, *pointer;
     int serverFd;
-
-    hints.ai_family = AF_UNSPEC;
+    memset(&hints,0,sizeof hints);
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -27,24 +29,27 @@ int get_socket(char addr[],char port[]){
 
     for(pointer = results;pointer != NULL;pointer = pointer->ai_next){
 
-        serverFd = (socket(results->ai_family, results->ai_socktype, results->ai_protocol)) == -1;
-        if(serverFd){
+        serverFd = socket(pointer->ai_family, pointer->ai_socktype, pointer->ai_protocol);
+        if(serverFd == -1){
             perror("socket");
             continue;
         }
 
-        if((connect(serverFd,pointer->ai_addr,pointer->ai_addrlen)) != 0){
+        if((connect(serverFd,pointer->ai_addr,pointer->ai_addrlen)) == -1){
+            close(serverFd);
             perror("connect");
-            continue;
-        }
 
+        }
+        printf("%d\n",serverFd);
         break;
     }
 
     if(pointer == NULL){
-        perror("connnect");
+        perror("connect");
         exit(EXIT_FAILURE);
     }
+
+
 
     freeaddrinfo(results);
 
