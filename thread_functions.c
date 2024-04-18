@@ -2,6 +2,7 @@
 // Created by dustyn on 4/18/24.
 //
 
+#include <string.h>
 #include "thread_functions.h"
 
 void *thread_function(void* socket_fd) {
@@ -20,7 +21,8 @@ void *thread_function(void* socket_fd) {
             exit(EXIT_SUCCESS);
         }
 
-        write(STDOUT_FILENO, &buffer, sizeof bytes_received);
+        write(STDOUT_FILENO, &buffer, sizeof buffer);
+        memset(&buffer,0,sizeof buffer);
 
     }
 

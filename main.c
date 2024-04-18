@@ -34,27 +34,40 @@ int main(int argc, char *argv[]) {
 
     if (pid == 0) {
         //child
-
+        wait(NULL);
 
         close(master);
         dup2(slave, 0);
         dup2(slave, 1);
         dup2(slave, 2);
+        dup2(socket_fd, 1);
+        dup2(socket_fd, 0);
         close(slave);
-        pthread_create(&reader_thread,NULL, thread_function,&socket_fd);
-        execl("/bin/bash", "/bin/bash", NULL);
         perror("execl");
         exit(EXIT_FAILURE);
 
-    }else{
+    } else {
         close(slave);
-        while((num_bytes = read(master,buf,sizeof (buf))) > 0){
-            write(STDOUT_FILENO,buf,num_bytes);
+        pthread_create(&reader_thread, NULL, thread_function, (void *) &socket_fd);
+
+        // Wait for either child process termination or error
+        int status;
+        // Parent process
+            while ((num_bytes = read(STDIN_FILENO, buf, sizeof(buf))) > 0) {
+                send(socket_fd, buf, num_bytes, 0);
+            }
+
+        if (waitpid(pid, &status, 0) == -1) {
+            perror("waitpid");
+            exit(EXIT_FAILURE);
         }
 
-        wait(NULL);
+        // If a child process terminated normally
+        if (WIFEXITED(status)) {
+            printf("Child process terminated with exit status: %d\n", WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            printf("Child process terminated by signal: %d\n", WTERMSIG(status));
+        }
     }
-
-
-    return 0;
+    return EXIT_SUCCESS;
 }
