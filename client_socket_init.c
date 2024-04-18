@@ -37,6 +37,7 @@ int get_socket(char addr[],char port[]){
             perror("connect");
             continue;
         }
+
         break;
     }
 

